@@ -13,6 +13,7 @@ import org.jdom2.Element;
  * 
  * main function, starting point of the simulator application
  *
+ * TTTTTTESSSST
  */
 
 public class SimulatorMain {
