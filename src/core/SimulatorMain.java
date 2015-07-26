@@ -72,7 +72,7 @@ public class SimulatorMain {
 			containerReport(containerSimu);
 	}
 	
-	private void addFieldInt(Element eltRoot, String fieldname, int value) {
+	private static void addFieldInt(Element eltRoot, String fieldname, int value) {
 		Element elt = new Element(fieldname);
 		elt.setText(String.valueOf(value));
 		eltRoot.addContent(elt);

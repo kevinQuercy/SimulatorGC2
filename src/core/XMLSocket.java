@@ -27,8 +27,8 @@ import org.jdom2.output.XMLOutputter;
 public class XMLSocket {
 	private static Logger LOGGER = Logger.getLogger(XMLSocket.class.getName());
 
-	Socket socket;
-	SAXBuilder sxb;
+	private Socket socket;
+	private SAXBuilder sxb;
 
 	public XMLSocket(Socket socket) {
 		super();
