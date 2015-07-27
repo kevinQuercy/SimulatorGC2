@@ -10,10 +10,10 @@ import java.util.Random;
 public class ContainerSimu {
 	private static final int maxWeight = 200; // kg
 	private static final int minAddWeight = 20; // kg
-	private static final int maxAddWeight = 100; // kg
+	private static final int maxAddWeight = maxWeight; // kg
 	private static final int maxVolume = 150; // L
 	private static final int minAddVolume = 20; // L
-	private static final int maxAddVolume = 80; // L
+	private static final int maxAddVolume = maxVolume; // L
 	
 	private int containerId;
 	private int weight; // kg
@@ -22,8 +22,7 @@ public class ContainerSimu {
 	public ContainerSimu(int containerId) {
 		super();
 		this.containerId = containerId;
-		weight = 0;
-		volume = 0;
+		empty();
 	}
 	
 	public int getContainerId() {
@@ -50,5 +49,10 @@ public class ContainerSimu {
 		// add some volume
 		volume += minAddVolume + random.nextInt(maxAddVolume-minAddVolume);
 		if (volume > maxVolume) volume = maxVolume;
+	}
+	
+	public void empty() {
+		weight = 0;
+		volume = 0;
 	}
 }

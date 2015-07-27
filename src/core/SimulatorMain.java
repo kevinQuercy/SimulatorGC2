@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,13 +64,29 @@ public class SimulatorMain {
 	}
 	
 	private void run() {
-		// 1/ fill randomly all containers
-		for (ContainerSimu containerSimu: containers)
-			containerSimu.randomFill(random);
-		
-		// 2/ report state of each container to controller
-		for (ContainerSimu containerSimu: containers)
-			containerReport(containerSimu);
+		Scanner scan = new Scanner(System.in);
+		scan.useDelimiter(""); // 'return' key will allow to loop
+		while (true) {
+			// 1/ fill randomly all containers
+			for (ContainerSimu containerSimu: containers)
+				containerSimu.randomFill(random);
+			
+			// 2/ report state of each container to controller
+			for (ContainerSimu containerSimu: containers)
+				containerReport(containerSimu);
+			
+			// 3/ ask controller to compute circuits for collection
+			trigCircuitComputation();
+			
+			// 4/ wait for used interaction to continue
+			System.out.println("Loop to reset collected containers and then fill them randomly ? (n to stop)");
+			if (scan.next().toLowerCase().equals("n"))
+				break;
+			
+			// 5/ get circuits for collection and resets all containers that are planned for collect
+			getCircuitsAndClearContainers();
+		}
+		scan.close();
 	}
 	
 	private static void addFieldInt(Element eltRoot, String fieldname, int value) {
@@ -79,21 +96,6 @@ public class SimulatorMain {
 	}
 	
 	private void containerReport(ContainerSimu containerSimu) {
-		Socket socket = null;
-
-		LOGGER.info("Container #"+containerSimu.getContainerId()+" connecting to "+server_host+":"+server_port);
-		try {
-			socket = new Socket(server_host, server_port);
-		} catch (UnknownHostException e) {
-			LOGGER.log(Level.SEVERE, "Unknown host", e);
-			return;
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Socket error", e);
-			return;
-		}
-			
-		XMLSocket xmlsocket = new XMLSocket(socket);
-		
 		// prepare request to server
 		Element rootReq = new Element("request");
 		Document request = new Document(rootReq);
@@ -111,11 +113,8 @@ public class SimulatorMain {
 		
 		// send request
 		LOGGER.info("Container #"+containerSimu.getContainerId()+" sending request CONTAINER_REPORT");
-		xmlsocket.write(request);
-
-		// get server response
-		Document response = xmlsocket.read();
-
+		Document response = sendMessage(request);
+		
 		if (response == null) {
 			LOGGER.severe("No response received");
 		} else {
@@ -124,7 +123,84 @@ public class SimulatorMain {
     		String responseType = rootResp.getChild("response_type").getTextNormalize().toUpperCase();
     		LOGGER.info("Server response: "+responseType);
 		}
+	}
 		
+	private void trigCircuitComputation() {
+		// prepare request to server
+		Element rootReq = new Element("request");
+		Document request = new Document(rootReq);
+		Element eltReqType = new Element("request_type");
+		eltReqType.setText("TRIG_CIRCUIT_COMPUTATION");
+		rootReq.addContent(eltReqType);
+
+		// send request
+		LOGGER.info("Sending request TRIG_CIRCUIT_COMPUTATION");
+		Document response = sendMessage(request);
+		
+		if (response == null) {
+			LOGGER.severe("No response received");
+		} else {
+    		// check response type
+    		Element rootResp = response.getRootElement();
+    		String responseType = rootResp.getChild("response_type").getTextNormalize().toUpperCase();
+    		LOGGER.info("Server response: "+responseType);
+		}
+	}
+	
+	private void getCircuitsAndClearContainers() {
+		// prepare request to server
+		Element rootReq = new Element("request");
+		Document request = new Document(rootReq);
+		Element eltReqType = new Element("request_type");
+		eltReqType.setText("REQ_CIRCUITS");
+		rootReq.addContent(eltReqType);
+
+		// send request
+		LOGGER.info("Sending request REQ_CIRCUITS");
+		Document response = sendMessage(request);
+		
+		if (response == null) {
+			LOGGER.severe("No response received");
+		} else {
+    		// check response type
+    		Element rootResp = response.getRootElement();
+    		
+    		// go through all circuits, all container sets to reset all containers that are scheduled for collect
+    		for (Element circuit: rootResp.getChild("circuits").getChildren("circuit")) {
+    			for (Element containerSet: circuit.getChild("container_sets").getChildren("container_set")) {
+    				for (Element container: containerSet.getChild("containers").getChildren("container")) {
+    					int containerId = Integer.valueOf(container.getChild("id").getTextNormalize());
+    					LOGGER.info("Reset container #"+containerId);
+    					containers.get(containerId).empty();
+    				}
+    			}
+    		}
+		}
+	}
+	
+	// connect to controller, send request, get response, close socket
+	private Document sendMessage(Document request) {
+		Socket socket = null;
+
+		try {
+			socket = new Socket(server_host, server_port);
+		} catch (UnknownHostException e) {
+			LOGGER.log(Level.SEVERE, "Unknown host", e);
+			return null;
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Socket error", e);
+			return null;
+		}
+			
+		XMLSocket xmlsocket = new XMLSocket(socket);
+		
+		xmlsocket.write(request);
+
+		// get server response
+		Document response = xmlsocket.read();
+
 		xmlsocket.close();
+		
+		return response;
 	}
 }
