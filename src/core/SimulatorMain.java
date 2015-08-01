@@ -26,7 +26,7 @@ public class SimulatorMain {
 
 	public static void main(String[] args) {
 		// default settings
-		int nbContainers = 50;
+		int nbContainers = 150;
 		String server_host = "localhost";
 		int server_port = 10000;
 		
