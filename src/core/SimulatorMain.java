@@ -26,7 +26,7 @@ public class SimulatorMain {
 
 	public static void main(String[] args) {
 		// default settings
-		int nbContainers = 150;
+		int nbContainers = 0;
 		String server_host = "localhost";
 		int server_port = 10000;
 		
@@ -64,29 +64,34 @@ public class SimulatorMain {
 	}
 	
 	private void run() {
-		Scanner scan = new Scanner(System.in);
-		scan.useDelimiter(""); // 'return' key will allow to loop
-		while (true) {
-			// 1/ fill randomly all containers
-			for (ContainerSimu containerSimu: containers)
-				containerSimu.randomFill(random);
-			
-			// 2/ report state of each container to controller
-			for (ContainerSimu containerSimu: containers)
-				containerReport(containerSimu);
-			
-			// 3/ ask controller to compute circuits for collection
+		if (nbContainers == 0) {
+			// no container, simply run a circuit computation
 			trigCircuitComputation();
-			
-			// 4/ wait for used interaction to continue
-			System.out.println("Loop to reset collected containers and then fill them randomly ? (n to stop)");
-			if (scan.next().toLowerCase().equals("n"))
-				break;
-			
-			// 5/ get circuits for collection and resets all containers that are planned for collect
-			getCircuitsAndClearContainers();
+		} else {
+			Scanner scan = new Scanner(System.in);
+			scan.useDelimiter(""); // 'return' key will allow to loop
+			while (true) {
+				// 1/ fill randomly all containers
+				for (ContainerSimu containerSimu: containers)
+					containerSimu.randomFill(random);
+				
+				// 2/ report state of each container to controller
+				for (ContainerSimu containerSimu: containers)
+					containerReport(containerSimu);
+				
+				// 3/ ask controller to compute circuits for collection
+				trigCircuitComputation();
+				
+				// 4/ wait for used interaction to continue
+				System.out.println("Loop to reset collected containers and then fill them randomly ? (n to stop)");
+				if (scan.next().toLowerCase().equals("n"))
+					break;
+				
+				// 5/ get circuits for collection and resets all containers that are planned for collect
+				getCircuitsAndClearContainers();
+			}
+			scan.close();
 		}
-		scan.close();
 	}
 	
 	private static void addFieldInt(Element eltRoot, String fieldname, int value) {
